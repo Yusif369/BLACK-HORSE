@@ -420,4 +420,340 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Столики</h2>
-            <button class="btn" onclick="openAddTableModal()">+
+            <button class="btn" onclick="openAddTableModal()">+ Столик</button>
+        </div>
+        <div class="tables-list" id="tablesList"></div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="main-content">
+        <div class="top-nav">
+            <div class="current-table-title" id="currentTableTitle">Выберите столик</div>
+            <div id="tableStatusActions"></div>
+        </div>
+
+        <div class="workspace-grid">
+            <!-- Menu Section -->
+            <div class="menu-section">
+                <div class="categories" id="categoriesContainer"></div>
+                <div class="menu-grid" id="menuGrid"></div>
+            </div>
+
+            <!-- Order / Bill Section -->
+            <div class="order-section">
+                <div>
+                    <div class="order-header">Текущий заказ</div>
+                    <div class="order-items-list" id="orderItemsList">
+                        <div class="empty-state">Столик не выбран или заказ пуст</div>
+                    </div>
+                </div>
+
+                <div class="order-summary" id="orderSummaryContainer" style="display: none;">
+                    <div class="summary-row">
+                        <span>Сумма:</span>
+                        <span id="subTotal">0.00 ₼</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Обслуживание (10%):</span>
+                        <span id="serviceFee">0.00 ₼</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Итого к оплате:</span>
+                        <span id="grandTotal">0.00 ₼</span>
+                    </div>
+                    <div class="order-actions">
+                        <button class="btn btn-secondary" onclick="clearOrder()">Очистить</button>
+                        <button class="btn" onclick="checkoutOrder()">Оплатить / Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Table -->
+    <div class="modal" id="addTableModal">
+        <div class="modal-content">
+            <h3>Добавить новый столик</h3>
+            <div class="form-group">
+                <label>Название / Номер столика</label>
+                <input type="text" id="newTableName" placeholder="Например: Стол №5">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeAddTableModal()">Отмена</button>
+                <button class="btn" onclick="createTable()">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tables = [
+            { id: 1, name: 'Стол №1 (Основной зал)', status: 'free', order: [] },
+            { id: 2, name: 'Стол №2 (У окна)', status: 'occupied', order: [ { id: 1, name: 'Эспрессо', price: 4, qty: 2 }, { id: 5, name: 'Цезарь с курицей', price: 12, qty: 1 } ] },
+            { id: 3, name: 'Стол №3 (VIP)', status: 'reserved', order: [] },
+        ];
+
+        const menuCategories = [
+            { id: 'all', name: 'Все' },
+            { id: 'drinks', name: 'Напитки' },
+            { id: 'hot', name: 'Горячие блюда' },
+            { id: 'salads', name: 'Салаты' },
+            { id: 'desserts', name: 'Десерты' }
+        ];
+
+        const menuItems = [
+            { id: 1, category: 'drinks', name: 'Эспрессо', price: 4 },
+            { id: 2, category: 'drinks', name: 'Капучино', price: 6 },
+            { id: 3, category: 'drinks', name: 'Лимонад', price: 7 },
+            { id: 4, category: 'hot', name: 'Стейк Рибай', price: 32 },
+            { id: 5, category: 'salads', name: 'Цезарь', price: 12 },
+            { id: 6, category: 'hot', name: 'Карбонара', price: 14 },
+            { id: 7, category: 'desserts', name: 'Тирамису', price: 8 },
+            { id: 8, category: 'desserts', name: 'Чизкейк', price: 9 }
+        ];
+
+        let currentTableId = null;
+        let activeCategory = 'all';
+
+        function init() {
+            renderTables();
+            renderCategories();
+            renderMenu();
+        }
+
+        function renderTables() {
+            const container = document.getElementById('tablesList');
+            container.innerHTML = '';
+
+            tables.forEach(table => {
+                const isSelected = table.id === currentTableId;
+                const totalSum = table.order.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                
+                let statusText = 'Свободен';
+                if (table.status === 'occupied') statusText = 'Занят';
+                if (table.status === 'reserved') statusText = 'Забронирован';
+
+                const card = document.createElement('div');
+                card.className = `table-card ${table.status} ${isSelected ? 'active' : ''}`;
+                card.onclick = () => selectTable(table.id);
+                card.innerHTML = `
+                    <div class="table-info">
+                        <span class="table-name">${table.name}</span>
+                        <span class="table-status status-${table.status}">${statusText}</span>
+                    </div>
+                    <div class="table-details">
+                        <span>Заказ: ${totalSum > 0 ? totalSum + ' ₼' : 'нет'}</span>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); deleteTable(${table.id})">Удалить</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectTable(id) {
+            currentTableId = id;
+            renderTables();
+            renderWorkspace();
+        }
+
+        function renderWorkspace() {
+            const titleEl = document.getElementById('currentTableTitle');
+            const summaryContainer = document.getElementById('orderSummaryContainer');
+            const table = tables.find(t => t.id === currentTableId);
+
+            if (!table) {
+                titleEl.innerText = 'Выберите столик';
+                summaryContainer.style.display = 'none';
+                document.getElementById('orderItemsList').innerHTML = '<div class="empty-state">Столик не выбран</div>';
+                return;
+            }
+
+            titleEl.innerText = table.name;
+            summaryContainer.style.display = 'block';
+            renderOrderItems();
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            menuCategories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `category-btn ${activeCategory === cat.id ? 'active' : ''}`;
+                btn.innerText = cat.name;
+                btn.onclick = () => {
+                    activeCategory = cat.id;
+                    renderCategories();
+                    renderMenu();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menuGrid');
+            container.innerHTML = '';
+
+            const filtered = activeCategory === 'all' 
+                ? menuItems 
+                : menuItems.filter(i => i.category === activeCategory);
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'menu-item';
+                card.onclick = () => addToOrder(item);
+                card.innerHTML = `
+                    <div class="menu-item-name">${item.name}</div>
+                    <div class="menu-item-price">${item.price} ₼</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addToOrder(menuItem) {
+            if (!currentTableId) {
+                alert('Пожалуйста, выберите столик!');
+                return;
+            }
+
+            const table = tables.find(t => t.id === currentTableId);
+            const existing = table.order.find(i => i.id === menuItem.id);
+
+            if (existing) {
+                existing.qty++;
+            } else {
+                table.order.push({ ...menuItem, qty: 1 });
+            }
+
+            table.status = 'occupied';
+            renderTables();
+            renderOrderItems();
+        }
+
+        function renderOrderItems() {
+            const container = document.getElementById('orderItemsList');
+            const table = tables.find(t => t.id === currentTableId);
+
+            if (!table || table.order.length === 0) {
+                container.innerHTML = '<div class="empty-state">Заказ пуст. Выберите блюда из меню.</div>';
+                updateSummary(0);
+                return;
+            }
+
+            container.innerHTML = '';
+            let subtotal = 0;
+
+            table.order.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+
+                const row = document.createElement('div');
+                row.className = 'order-item-row';
+                row.innerHTML = `
+                    <div>
+                        <div style="font-weight: 500;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${item.price} ₼ × ${item.qty} = ${itemTotal} ₼</div>
+                    </div>
+                    <div class="order-item-controls">
+                        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                        <span>${item.qty}</span>
+                        <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            updateSummary(subtotal);
+        }
+
+        function changeQty(itemId, delta) {
+            const table = tables.find(t => t.id === currentTableId);
+            const itemIndex = table.order.findIndex(i => i.id === itemId);
+
+            if (itemIndex > -1) {
+                table.order[itemIndex].qty += delta;
+                if (table.order[itemIndex].qty <= 0) {
+                    table.order.splice(itemIndex, 1);
+                }
+            }
+
+            if (table.order.length === 0) {
+                table.status = 'free';
+            }
+
+            renderTables();
+            renderOrderItems();
+        }
+
+        function updateSummary(subtotal) {
+            const serviceFee = subtotal * 0.10;
+            const grandTotal = subtotal + serviceFee;
+
+            document.getElementById('subTotal').innerText = subtotal.toFixed(2) + ' ₼';
+            document.getElementById('serviceFee').innerText = serviceFee.toFixed(2) + ' ₼';
+            document.getElementById('grandTotal').innerText = grandTotal.toFixed(2) + ' ₼';
+        }
+
+        function clearOrder() {
+            const table = tables.find(t => t.id === currentTableId);
+            if (table) {
+                table.order = [];
+                table.status = 'free';
+                renderTables();
+                renderOrderItems();
+            }
+        }
+
+        function checkoutOrder() {
+            const table = tables.find(t => t.id === currentTableId);
+            if (!table || table.order.length === 0) return;
+
+            const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const total = subtotal * 1.10;
+
+            alert(`Столик "${table.name}" закрыт!\nИтого к оплате: ${total.toFixed(2)} ₼`);
+            
+            table.order = [];
+            table.status = 'free';
+            renderTables();
+            renderOrderItems();
+        }
+
+        function openAddTableModal() {
+            document.getElementById('addTableModal').style.display = 'flex';
+        }
+
+        function closeAddTableModal() {
+            document.getElementById('addTableModal').style.display = 'none';
+            document.getElementById('newTableName').value = '';
+        }
+
+        function createTable() {
+            const nameInput = document.getElementById('newTableName');
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('Введите название!');
+                return;
+            }
+
+            tables.push({
+                id: Date.now(),
+                name: name,
+                status: 'free',
+                order: []
+            });
+
+            closeAddTableModal();
+            renderTables();
+        }
+
+        function deleteTable(id) {
+            tables = tables.filter(t => t.id !== id);
+            if (currentTableId === id) currentTableId = null;
+            renderTables();
+            renderWorkspace();
+        }
+
+        init();
+    </script>
+</body>
+</html>
