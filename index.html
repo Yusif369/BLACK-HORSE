@@ -3,349 +3,583 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Система Управления Рестораном - Столы и Заказы</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Управление столиками и заказами</title>
     <style>
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+
+        /* Sidebar / Tables panel */
+        .sidebar {
+            width: 380px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.03);
+            z-index: 10;
         }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.25rem;
+            color: var(--text-main);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .tables-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
         .table-card {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f9fafb;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
         }
+
         .table-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+        }
+
+        .table-card.active {
+            border-color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .table-card.occupied {
+            border-left: 5px solid var(--danger);
+        }
+
+        .table-card.reserved {
+            border-left: 5px solid var(--warning);
+        }
+
+        .table-card.free {
+            border-left: 5px solid var(--success);
+        }
+
+        .table-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .table-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .table-status {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-free { background: #d1fae5; color: #065f46; }
+        .status-occupied { background: #fee2e2; color: #991b1b; }
+        .status-reserved { background: #fef3c7; color: #92400e; }
+
+        .table-details {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Main Workspace */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+
+        .top-nav {
+            padding: 15px 25px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .current-table-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .workspace-grid {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Menu Section */
+        .menu-section {
+            flex: 1.3;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .category-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .category-btn.active, .category-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu-item:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+
+        .menu-item-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .menu-item-price {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Order / Bill Section */
+        .order-section {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .order-header {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-items-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.9rem;
+        }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qty-btn {
+            background: #e5e7eb;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .qty-btn:hover { background: #d1d5db; }
+
+        .order-summary {
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .summary-row.total {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-top: 10px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .order-actions button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 0;
+            font-size: 0.95rem;
         }
     </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 h-screen flex flex-col overflow-hidden">
-    <!-- Header -->
-    <header class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-md z-10 shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="bg-amber-500 p-2 rounded-lg text-slate-900 font-bold">
-                <i class="fa-solid font-black fa-utensils"></i>
-            </div>
-            <div>
-                <h1 class="text-lg font-bold leading-tight">Gourmet Control</h1>
-                <p class="text-xs text-slate-400">Управление столиками и заказами</p>
-            </div>
+<body>
+
+    <!-- Sidebar: Tables -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Столики</h2>
+            <button class="btn" onclick="openAddTableModal()">+ Столик</button>
         </div>
-
-        <div class="flex items-center gap-6 text-sm">
-            <div class="hidden md:flex items-center gap-4 border-r border-slate-700 pr-6">
-                <div>
-                    <span class="text-slate-400 text-xs block">Занято:</span>
-                    <span id="stat-occupied" class="font-bold text-amber-400">0/10</span>
-                </div>
-                <div>
-                    <span class="text-slate-400 text-xs block">Выручка за смену:</span>
-                    <span id="stat-revenue" class="font-bold text-emerald-400">0 ₽</span>
-                </div>
-            </div>
-
-            <button onclick="addNewTable()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                <i class="fa-solid fa-plus text-amber-400"></i> Добавить столик
-            </button>
+        <div class="tables-list" id="tablesList">
+            <!-- Tables will be injected here -->
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-
-        <!-- LEFT PANEL: Tables -->
-        <section class="w-full md:w-5/12 lg:w-4/12 bg-slate-50 border-r border-slate-200 flex flex-col h-full overflow-hidden">
-            <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center bg-white shrink-0">
-                <h2 class="font-semibold text-slate-700 flex items-center gap-2">
-                    <i class="fa-solid fa-chair text-slate-400"></i> Столики
-                </h2>
-                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg text-xs">
-                    <button onclick="filterTables('all')" id="filter-all" class="px-2.5 py-1 rounded-md font-medium bg-white text-slate-800 shadow-sm transition">Все</button>
-                    <button onclick="filterTables('Available')" id="filter-Available" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">Свободные</button>
-                    <button onclick="filterTables('Occupied')" id="filter-Occupied" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">Заняты</button>
-                </div>
-            </div>
-
-            <div id="tables-container" class="p-4 grid grid-cols-2 sm:grid-cols-2 gap-3 overflow-y-auto flex-1"></div>
-
-            <div class="p-3 bg-white border-t border-slate-200 text-xs text-slate-500 flex justify-around shrink-0">
-                <div class="flex items-center gap-1.5">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Свободен
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Занят
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <span class="w-3 h-3 rounded-full bg-indigo-500 inline-block"></span> Забронирован
-                </div>
-            </div>
-        </section>
-
-        <!-- CENTER PANEL: Menu -->
-        <section class="w-full md:w-4/12 lg:w-5/12 bg-white flex flex-col h-full overflow-hidden border-r border-slate-200">
-            <div class="p-4 border-b border-slate-200 shrink-0">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-semibold text-slate-700 flex items-center gap-2">
-                        <i class="fa-solid fa-book-open text-slate-400"></i> Меню
-                    </h2>
-                    <span id="active-table-badge" class="text-xs bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-full font-medium">
-                        Столик не выбран
-                    </span>
-                </div>
-
-                <div id="category-pills" class="flex gap-2 overflow-x-auto pb-1 text-xs no-scrollbar"></div>
-            </div>
-
-            <div id="menu-container" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto flex-1"></div>
-        </section>
-
-        <!-- RIGHT PANEL: Current Order -->
-        <section class="w-full md:w-3/12 lg:w-3/12 bg-slate-50 flex flex-col h-full overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center shrink-0">
-                <div>
-                    <h2 class="font-bold text-slate-800 text-base" id="order-title">Заказ — Столик #</h2>
-                    <p class="text-xs text-slate-400" id="order-status-subtitle">Выберите столик для работы</p>
-                </div>
-                <button onclick="changeTableStatusPrompt()" id="status-change-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-2 py-1 rounded transition">
-                    Статус
-                </button>
-            </div>
-
-            <div id="order-items-list" class="flex-1 p-4 overflow-y-auto space-y-2">
-                <div class="text-center text-slate-400 py-12 text-sm">
-                    <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300 block"></i>
-                    Выберите столик, чтобы посмотреть или оформить заказ
-                </div>
-            </div>
-
-            <div class="p-4 bg-white border-t border-slate-200 shrink-0 space-y-3">
-                <div class="space-y-1.5 text-xs text-slate-600 border-b border-slate-100 pb-3">
-                    <div class="flex justify-between">
-                        <span>Сумма:</span>
-                        <span id="subtotal-val" class="font-semibold text-slate-800">0 ₽</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <label for="tax-toggle" class="cursor-pointer flex items-center gap-1.5">
-                            <input type="checkbox" id="tax-toggle" onchange="toggleServiceFee(this.checked)" class="rounded text-brand-600 focus:ring-brand-500 border-slate-300">
-                            Обслуживание (10%):
-                        </label>
-                        <span id="service-fee-val" class="font-semibold text-slate-800">0 ₽</span>
-                    </div>
-                    <div class="flex justify-between text-sm font-bold text-slate-900 pt-1">
-                        <span>Итого к оплате:</span>
-                        <span id="total-val" class="text-emerald-600 text-base">0 ₽</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="clearCurrentOrder()" id="btn-clear" disabled class="px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 rounded-lg text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Очистить
-                    </button>
-                    <button onclick="payAndCloseBill()" id="btn-pay" disabled class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
-                        <i class="fa-solid fa-credit-card"></i> Оплатить
-                    </button>
-                </div>
-            </div>
-        </section>
-
     </div>
 
-    <!-- Modal -->
-    <div id="payment-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
-            <div class="text-center">
-                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
-                    <i class="fa-solid fa-check"></i>
+    <!-- Main Workspace -->
+    <div class="main-content">
+        <div class="top-nav">
+            <div class="current-table-title" id="currentTableTitle">Выберите столик</div>
+            <div id="tableStatusActions"></div>
+        </div>
+
+        <div class="workspace-grid">
+            <!-- Menu Section -->
+            <div class="menu-section">
+                <div class="categories" id="categoriesContainer">
+                    <!-- Categories injected here -->
                 </div>
-                <h3 class="text-lg font-bold text-slate-800">Оплата успешно проведена</h3>
-                <p class="text-xs text-slate-500">Чек успешно сформирован и закрыт</p>
+                <div class="menu-grid" id="menuGrid">
+                    <!-- Menu items injected here -->
+                </div>
             </div>
 
-            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-2 font-mono" id="modal-receipt-details"></div>
+            <!-- Order / Bill Section -->
+            <div class="order-section">
+                <div>
+                    <div class="order-header">Текущий заказ</div>
+                    <div class="order-items-list" id="orderItemsList">
+                        <div class="empty-state">Столик не выбран или заказ пуст</div>
+                    </div>
+                </div>
 
-            <button onclick="closeModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition">
-                Готово (Освободить стол)
-            </button>
+                <div class="order-summary" id="orderSummaryContainer" style="display: none;">
+                    <div class="summary-row">
+                        <span>Сумма:</span>
+                        <span id="subTotal">0.00 ₼</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Обслуживание (10%):</span>
+                        <span id="serviceFee">0.00 ₼</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Итого к оплате:</span>
+                        <span id="grandTotal">0.00 ₼</span>
+                    </div>
+                    <div class="order-actions">
+                        <button class="btn btn-secondary" onclick="clearOrder()">Очистить</button>
+                        <button class="btn" onclick="checkoutOrder()">Оплатить / Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Table -->
+    <div class="modal" id="addTableModal">
+        <div class="modal-content">
+            <h3>Добавить новый столик</h3>
+            <div class="form-group">
+                <label>Название / Номер столика</label>
+                <input type="text" id="newTableName" placeholder="Например: Стол №5 или Терраса 2">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeAddTableModal()">Отмена</button>
+                <button class="btn" onclick="createTable()">Создать</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const menuCategories = ["Все", "Закуски", "Основные блюда", "Напитки", "Десерты"];
-        
-        const menuItems = [
-            { id: 101, name: "Салат Цезарь с курицей", category: "Закуски", price: 520, icon: "fa-bowl-food" },
-            { id: 102, name: "Тартар из лосося", category: "Закуски", price: 680, icon: "fa-fish" },
-            { id: 103, name: "Брускетта с томатами", category: "Закуски", price: 390, icon: "fa-bread-slice" },
-            { id: 201, name: "Стейк Рибай", category: "Основные блюда", price: 1850, icon: "fa-drumstick-bite" },
-            { id: 202, name: "Паста Карбонара", category: "Основные блюда", price: 590, icon: "fa-utensils" },
-            { id: 203, name: "Пицца Маргарита", category: "Основные блюда", price: 650, icon: "fa-pizza-slice" },
-            { id: 204, name: "Бургер Классический", category: "Основные блюда", price: 620, icon: "fa-burger" },
-            { id: 301, name: "Капучино 300мл", category: "Напитки", price: 250, icon: "fa-mug-hot" },
-            { id: 302, name: "Лимонад Домашний", category: "Напитки", price: 310, icon: "fa-glass-water" },
-            { id: 303, name: "Бокал красного вина", category: "Напитки", price: 450, icon: "fa-wine-glass" },
-            { id: 401, name: "Тирамису", category: "Десерты", price: 420, icon: "fa-cake-candles" },
-            { id: 402, name: "Чизкейк Нью-Йорк", category: "Десерты", price: 390, icon: "fa-cheese" }
-        ];
-
+        // Data Store
         let tables = [
-            { id: 1, name: "Столик 1", seats: 2, status: "Available", order: [], includeServiceFee: false },
-            { id: 2, name: "Столик 2", seats: 2, status: "Occupied", order: [{ itemId: 101, qty: 1 }, { itemId: 301, qty: 2 }], includeServiceFee: true },
-            { id: 3, name: "Столик 3", seats: 4, status: "Available", order: [], includeServiceFee: false },
-            { id: 4, name: "Столик 4", seats: 4, status: "Occupied", order: [{ itemId: 201, qty: 1 }, { itemId: 303, qty: 2 }], includeServiceFee: false },
-            { id: 5, name: "Столик 5", seats: 6, status: "Reserved", order: [], includeServiceFee: false },
-            { id: 6, name: "Столик 6", seats: 2, status: "Available", order: [], includeServiceFee: false },
-            { id: 7, name: "Столик 7", seats: 8, status: "Available", order: [], includeServiceFee: false },
-            { id: 8, name: "Столик 8", seats: 4, status: "Available", order: [], includeServiceFee: false }
+            { id: 1, name: 'Стол №1 (Основной зал)', status: 'free', guests: 4, order: [] },
+            { id: 2, name: 'Стол №2 (У окна)', status: 'occupied', guests: 2, order: [ { id: 1, name: 'Эспрессо', price: 4, qty: 2 }, { id: 5, name: 'Цезарь с курицей', price: 12, qty: 1 } ] },
+            { id: 3, name: 'Стол №3 (VIP)', status: 'reserved', guests: 6, order: [] },
         ];
 
-        let activeTableId = null;
-        let selectedCategory = "Все";
-        let tableFilter = "all";
-        let totalDailyRevenue = 3200;
+        const menuCategories = [
+            { id: 'all', name: 'Все' },
+            { id: 'drinks', name: 'Напитки' },
+            { id: 'hot', name: 'Горячие блюда' },
+            { id: 'salads', name: 'Салаты' },
+            { id: 'desserts', name: 'Десерты' }
+        ];
 
-        window.onload = function() {
-            renderCategories();
+        const menuItems = [
+            { id: 1, category: 'drinks', name: 'Эспрессо', price: 4 },
+            { id: 2, category: 'drinks', name: 'Капучино', price: 6 },
+            { id: 3, category: 'drinks', name: 'Лимонад домашний', price: 7 },
+            { id: 4, category: 'hot', name: 'Стейк Рибай', price: 32 },
+            { id: 5, category: 'salads', name: 'Цезарь с курицей', price: 12 },
+            { id: 6, category: 'hot', name: 'Паста Карбонара', price: 14 },
+            { id: 7, category: 'desserts', name: 'Тирамису', price: 8 },
+            { id: 8, category: 'desserts', name: 'Чизкейк Нью-Йорк', price: 9 }
+        ];
+
+        let currentTableId = null;
+        let activeCategory = 'all';
+
+        // Initialization
+        function init() {
             renderTables();
+            renderCategories();
             renderMenu();
-            updateDailyStats();
-        };
+        }
 
+        // Render Tables List
         function renderTables() {
-            const container = document.getElementById('tables-container');
+            const container = document.getElementById('tablesList');
             container.innerHTML = '';
 
-            const filteredTables = tables.filter(t => {
-                if (tableFilter === 'all') return true;
-                return t.status === tableFilter;
-            });
-
-            filteredTables.forEach(table => {
-                const isSelected = table.id === activeTableId;
-                const itemsCount = table.order.reduce((acc, i) => acc + i.qty, 0);
-
-                let statusBadge = '';
-                let statusBg = '';
-
-                if (table.status === 'Available') {
-                    statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Свободен</span>';
-                    statusBg = 'border-slate-200 hover:border-emerald-300';
-                } else if (table.status === 'Occupied') {
-                    statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">Занят</span>';
-                    statusBg = 'border-amber-300 bg-amber-50/30';
-                } else {
-                    statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-800">Бронь</span>';
-                    statusBg = 'border-indigo-200 bg-indigo-50/20';
-                }
-
-                const activeBorder = isSelected ? 'ring-2 ring-slate-800 border-transparent shadow-md' : '';
+            tables.forEach(table => {
+                const isSelected = table.id === currentTableId;
+                const totalSum = table.order.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                
+                let statusText = 'Свободен';
+                if (table.status === 'occupied') statusText = 'Занят';
+                if (table.status === 'reserved') statusText = 'Забронирован';
 
                 const card = document.createElement('div');
-                card.className = `table-card bg-white p-3.5 rounded-xl border ${statusBg} ${activeBorder} cursor-pointer flex flex-col justify-between`;
+                card.className = `table-card ${table.status} ${isSelected ? 'active' : ''}`;
                 card.onclick = () => selectTable(table.id);
-
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm">${table.name}</h3>
-                            <span class="text-[11px] text-slate-400"><i class="fa-regular fa-user"></i> До ${table.seats} мест</span>
-                        </div>
-                        ${statusBadge}
+                    <div class="table-info">
+                        <span class="table-name">${table.name}</span>
+                        <span class="table-status status-${table.status}">${statusText}</span>
                     </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
-                        <span class="text-slate-500"><i class="fa-solid fa-basket-shopping text-slate-300"></i> ${itemsCount} поз.</span>
-                        <span class="font-bold text-slate-700">${calculateTableSubtotal(table)} ₽</span>
+                    <div class="table-details">
+                        <span>Заказ: ${totalSum > 0 ? totalSum + ' ₼' : 'нет'}</span>
+                        <button class="btn btn-danger" style="padding: 2px 6px; font-size: 0.7rem;" onclick="event.stopPropagation(); deleteTable(${table.id})">Удалить</button>
                     </div>
                 `;
-
                 container.appendChild(card);
             });
         }
 
-        function filterTables(status) {
-            tableFilter = status;
-            ['all', 'Available', 'Occupied'].forEach(s => {
-                const btn = document.getElementById(`filter-${s}`);
-                if (s === status) {
-                    btn.className = "px-2.5 py-1 rounded-md font-medium bg-white text-slate-800 shadow-sm transition";
-                } else {
-                    btn.className = "px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition";
-                }
-            });
-            renderTables();
-        }
-
+        // Select Table
         function selectTable(id) {
-            activeTableId = id;
+            currentTableId = id;
             renderTables();
-            renderActiveOrder();
-            
-            const table = tables.find(t => t.id === id);
-            document.getElementById('active-table-badge').innerText = `${table.name} (${table.status})`;
+            renderWorkspace();
         }
 
-        function addNewTable() {
-            const nextId = tables.length + 1;
-            tables.push({
-                id: nextId,
-                name: `Столик ${nextId}`,
-                seats: 4,
-                status: "Available",
-                order: [],
-                includeServiceFee: false
-            });
-            renderTables();
-            updateDailyStats();
+        // Render Workspace Header & Order
+        function renderWorkspace() {
+            const titleEl = document.getElementById('currentTableTitle');
+            const summaryContainer = document.getElementById('orderSummaryContainer');
+            const table = tables.find(t => t.id === currentTableId);
+
+            if (!table) {
+                titleEl.innerText = 'Выберите столик';
+                summaryContainer.style.display = 'none';
+                document.getElementById('orderItemsList').innerHTML = '<div class="empty-state">Столик не выбран</div>';
+                return;
+            }
+
+            titleEl.innerText = table.name;
+            summaryContainer.style.display = 'block';
+            renderOrderItems();
         }
 
+        // Render Categories
         function renderCategories() {
-            const container = document.getElementById('category-pills');
+            const container = document.getElementById('categoriesContainer');
             container.innerHTML = '';
 
             menuCategories.forEach(cat => {
                 const btn = document.createElement('button');
-                const isSelected = cat === selectedCategory;
-                btn.className = `px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition text-xs ${
-                    isSelected 
-                        ? 'bg-slate-900 text-white shadow-sm' 
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`;
-                btn.innerText = cat;
+                btn.className = `category-btn ${activeCategory === cat.id ? 'active' : ''}`;
+                btn.innerText = cat.name;
                 btn.onclick = () => {
-                    selectedCategory = cat;
+                    activeCategory = cat.id;
                     renderCategories();
                     renderMenu();
                 };
@@ -353,256 +587,184 @@
             });
         }
 
+        // Render Menu Items
         function renderMenu() {
-            const container = document.getElementById('menu-container');
+            const container = document.getElementById('menuGrid');
             container.innerHTML = '';
 
-            const itemsToDisplay = selectedCategory === "Все" 
+            const filtered = activeCategory === 'all' 
                 ? menuItems 
-                : menuItems.filter(i => i.category === selectedCategory);
+                : menuItems.filter(i => i.category === activeCategory);
 
-            itemsToDisplay.forEach(item => {
+            filtered.forEach(item => {
                 const card = document.createElement('div');
-                card.className = "p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl flex justify-between items-center transition group";
-
+                card.className = 'menu-item';
+                card.onclick = () => addToOrder(item);
                 card.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 text-base shadow-sm group-hover:scale-105 transition-transform">
-                            <i class="fa-solid ${item.icon}"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-xs text-slate-800">${item.name}</h4>
-                            <span class="text-xs font-bold text-emerald-600">${item.price} ₽</span>
-                        </div>
-                    </div>
-                    <button onclick="addItemToOrder(${item.id})" class="h-8 w-8 rounded-lg bg-white border border-slate-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 text-slate-700 flex items-center justify-center transition shadow-sm active:scale-95">
-                        <i class="fa-solid fa-plus text-xs"></i>
-                    </button>
+                    <div class="menu-item-name">${item.name}</div>
+                    <div class="menu-item-price">${item.price} ₼</div>
                 `;
-
                 container.appendChild(card);
             });
         }
 
-        function addItemToOrder(itemId) {
-            if (!activeTableId) {
-                alert("Пожалуйста, сначала выберите столик!");
+        // Add Item to Current Table Order
+        function addToOrder(menuItem) {
+            if (!currentTableId) {
+                alert('Пожалуйста, выберите столик слева перед добавлением заказа!');
                 return;
             }
 
-            const table = tables.find(t => t.id === activeTableId);
-            if (table.status === 'Available') {
-                table.status = 'Occupied';
-            }
+            const table = tables.find(t => t.id === currentTableId);
+            const existing = table.order.find(i => i.id === menuItem.id);
 
-            const existingItem = table.order.find(i => i.itemId === itemId);
-            if (existingItem) {
-                existingItem.qty += 1;
+            if (existing) {
+                existing.qty++;
             } else {
-                table.order.push({ itemId, qty: 1 });
+                table.order.push({ ...menuItem, qty: 1 });
             }
 
+            table.status = 'occupied';
             renderTables();
-            renderActiveOrder();
-            updateDailyStats();
+            renderOrderItems();
         }
 
-        function updateItemQuantity(itemId, delta) {
-            if (!activeTableId) return;
-            const table = tables.find(t => t.id === activeTableId);
-            const item = table.order.find(i => i.itemId === itemId);
+        // Render Current Order Items
+        function renderOrderItems() {
+            const container = document.getElementById('orderItemsList');
+            const table = tables.find(t => t.id === currentTableId);
 
-            if (item) {
-                item.qty += delta;
-                if (item.qty <= 0) {
-                    table.order = table.order.filter(i => i.itemId !== itemId);
-                }
-            }
-
-            renderTables();
-            renderActiveOrder();
-        }
-
-        function renderActiveOrder() {
-            const listContainer = document.getElementById('order-items-list');
-            const title = document.getElementById('order-title');
-            const subtitle = document.getElementById('order-status-subtitle');
-            const btnStatus = document.getElementById('status-change-btn');
-            const btnClear = document.getElementById('btn-clear');
-            const btnPay = document.getElementById('btn-pay');
-            const taxToggle = document.getElementById('tax-toggle');
-
-            if (!activeTableId) {
-                title.innerText = "Заказ — Столик #";
-                subtitle.innerText = "Выберите столик из списка слева";
-                btnStatus.classList.add('hidden');
-                listContainer.innerHTML = `
-                    <div class="text-center text-slate-400 py-12 text-sm">
-                        <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300 block"></i>
-                        Выберите столик, чтобы посмотреть или оформить заказ
-                    </div>
-                `;
-                updateTotals(0, false);
-                btnClear.disabled = true;
-                btnPay.disabled = true;
+            if (!table || table.order.length === 0) {
+                container.innerHTML = '<div class="empty-state">Заказ пуст. Выберите блюда из меню слева.</div>';
+                updateSummary(0);
                 return;
             }
 
-            const table = tables.find(t => t.id === activeTableId);
-            title.innerText = `Заказ — ${table.name}`;
-            subtitle.innerText = `Статус: ${getStatusRussian(table.status)}`;
-            btnStatus.classList.remove('hidden');
-
-            taxToggle.checked = table.includeServiceFee;
-
-            if (table.order.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center text-slate-400 py-10 text-xs">
-                        <i class="fa-solid fa-utensils text-2xl mb-2 text-slate-300 block"></i>
-                        Заказ пуст. Выберите блюда из меню для добавления.
-                    </div>
-                `;
-                btnClear.disabled = true;
-                btnPay.disabled = true;
-                updateTotals(0, table.includeServiceFee);
-                return;
-            }
-
-            btnClear.disabled = false;
-            btnPay.disabled = false;
-
-            listContainer.innerHTML = '';
+            container.innerHTML = '';
             let subtotal = 0;
 
-            table.order.forEach(orderItem => {
-                const menuItem = menuItems.find(m => m.id === orderItem.itemId);
-                const itemTotal = menuItem.price * orderItem.qty;
+            table.order.forEach(item => {
+                const itemTotal = item.price * item.qty;
                 subtotal += itemTotal;
 
                 const row = document.createElement('div');
-                row.className = "bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between items-center text-xs";
+                row.className = 'order-item-row';
                 row.innerHTML = `
-                    <div class="flex-1 pr-2">
-                        <div class="font-medium text-slate-800">${menuItem.name}</div>
-                        <div class="text-slate-400 text-[11px]">${menuItem.price} ₽ × ${orderItem.qty} = <span class="font-semibold text-slate-700">${itemTotal} ₽</span></div>
+                    <div>
+                        <div style="font-weight: 500;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${item.price} ₼ × ${item.qty} = ${itemTotal} ₼</div>
                     </div>
-                    <div class="flex items-center gap-1.5 bg-slate-100 rounded-md p-1">
-                        <button onclick="updateItemQuantity(${menuItem.id}, -1)" class="w-5 h-5 bg-white border border-slate-200 text-slate-600 rounded flex items-center justify-center hover:bg-slate-50 font-bold">-</button>
-                        <span class="w-4 text-center font-bold text-slate-800">${orderItem.qty}</span>
-                        <button onclick="updateItemQuantity(${menuItem.id}, 1)" class="w-5 h-5 bg-white border border-slate-200 text-slate-600 rounded flex items-center justify-center hover:bg-slate-50 font-bold">+</button>
+                    <div class="order-item-controls">
+                        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                        <span>${item.qty}</span>
+                        <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
                     </div>
                 `;
-                listContainer.appendChild(row);
+                container.appendChild(row);
             });
 
-            updateTotals(subtotal, table.includeServiceFee);
+            updateSummary(subtotal);
         }
 
-        function toggleServiceFee(checked) {
-            if (!activeTableId) return;
-            const table = tables.find(t => t.id === activeTableId);
-            table.includeServiceFee = checked;
-            renderActiveOrder();
-        }
+        // Change Item Quantity
+        function changeQty(itemId, delta) {
+            const table = tables.find(t => t.id === currentTableId);
+            const itemIndex = table.order.findIndex(i => i.id === itemId);
 
-        function updateTotals(subtotal, hasServiceFee) {
-            const serviceFee = hasServiceFee ? Math.round(subtotal * 0.10) : 0;
-            const total = subtotal + serviceFee;
+            if (itemIndex > -1) {
+                table.order[itemIndex].qty += delta;
+                if (table.order[itemIndex].qty <= 0) {
+                    table.order.splice(itemIndex, 1);
+                }
+            }
 
-            document.getElementById('subtotal-val').innerText = `${subtotal} ₽`;
-            document.getElementById('service-fee-val').innerText = `${serviceFee} ₽`;
-            document.getElementById('total-val').innerText = `${total} ₽`;
-        }
+            if (table.order.length === 0) {
+                table.status = 'free';
+            }
 
-        function calculateTableSubtotal(table) {
-            return table.order.reduce((sum, item) => {
-                const menu = menuItems.find(m => m.id === item.itemId);
-                return sum + (menu ? menu.price * item.qty : 0);
-            }, 0);
-        }
-
-        function clearCurrentOrder() {
-            if (!activeTableId) return;
-            const table = tables.find(t => t.id === activeTableId);
-            table.order = [];
             renderTables();
-            renderActiveOrder();
+            renderOrderItems();
         }
 
-        function changeTableStatusPrompt() {
-            if (!activeTableId) return;
-            const table = tables.find(t => t.id === activeTableId);
-            
-            const nextStatus = table.status === 'Available' ? 'Occupied' : (table.status === 'Occupied' ? 'Reserved' : 'Available');
-            table.status = nextStatus;
-            
-            renderTables();
-            renderActiveOrder();
-            updateDailyStats();
+        // Update Summary Calculations
+        function updateSummary(subtotal) {
+            const serviceFee = subtotal * 0.10;
+            const grandTotal = subtotal + serviceFee;
+
+            document.getElementById('subTotal').innerText = subtotal.toFixed(2) + ' ₼';
+            document.getElementById('serviceFee').innerText = serviceFee.toFixed(2) + ' ₼';
+            document.getElementById('grandTotal').innerText = grandTotal.toFixed(2) + ' ₼';
         }
 
-        function payAndCloseBill() {
-            if (!activeTableId) return;
-            const table = tables.find(t => t.id === activeTableId);
-            if (table.order.length === 0) return;
-
-            const subtotal = calculateTableSubtotal(table);
-            const serviceFee = table.includeServiceFee ? Math.round(subtotal * 0.10) : 0;
-            const total = subtotal + serviceFee;
-
-            const modalDetails = document.getElementById('modal-receipt-details');
-            let itemsHtml = table.order.map(i => {
-                const menuItem = menuItems.find(m => m.id === i.itemId);
-                return `<div class="flex justify-between"><span>${menuItem.name} x${i.qty}</span><span>${menuItem.price * i.qty} ₽</span></div>`;
-            }).join('');
-
-            modalDetails.innerHTML = `
-                <div class="border-b border-slate-200 pb-2 mb-2 font-bold flex justify-between">
-                    <span>${table.name}</span>
-                    <span>#${Math.floor(1000 + Math.random() * 9000)}</span>
-                </div>
-                ${itemsHtml}
-                <div class="border-t border-slate-200 pt-2 mt-2 space-y-1">
-                    <div class="flex justify-between text-slate-500"><span>Подытог:</span><span>${subtotal} ₽</span></div>
-                    ${table.includeServiceFee ? `<div class="flex justify-between text-slate-500"><span>Обслуживание 10%:</span><span>${serviceFee} ₽</span></div>` : ''}
-                    <div class="flex justify-between font-bold text-slate-900 text-sm pt-1"><span>ИТОГО:</span><span>${total} ₽</span></div>
-                </div>
-            `;
-
-            totalDailyRevenue += total;
-            updateDailyStats();
-
-            document.getElementById('payment-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('payment-modal').classList.add('hidden');
-            
-            if (activeTableId) {
-                const table = tables.find(t => t.id === activeTableId);
+        // Clear Order
+        function clearOrder() {
+            const table = tables.find(t => t.id === currentTableId);
+            if (table) {
                 table.order = [];
-                table.status = 'Available';
-                table.includeServiceFee = false;
+                table.status = 'free';
                 renderTables();
-                renderActiveOrder();
-                updateDailyStats();
+                renderOrderItems();
             }
         }
 
-        function updateDailyStats() {
-            const occupiedCount = tables.filter(t => t.status === 'Occupied').length;
-            document.getElementById('stat-occupied').innerText = `${occupiedCount}/${tables.length}`;
-            document.getElementById('stat-revenue').innerText = `${totalDailyRevenue} ₽`;
+        // Checkout / Close Bill
+        function checkoutOrder() {
+            const table = tables.find(t => t.id === currentTableId);
+            if (!table || table.order.length === 0) return;
+
+            const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const total = subtotal * 1.10;
+
+            alert(`Столик "${table.name}" успешно закрыт!\nИтого к оплате с учетом обслуживания: ${total.toFixed(2)} ₼`);
+            
+            table.order = [];
+            table.status = 'free';
+            renderTables();
+            renderOrderItems();
         }
 
-        function getStatusRussian(status) {
-            switch(status) {
-                case 'Available': return 'Свободен';
-                case 'Occupied': return 'Занят';
-                case 'Reserved': return 'Забронирован';
-                default: return status;
-            }
+        // Modals for Table Management
+        function openAddTableModal() {
+            document.getElementById('addTableModal').style.display = 'flex';
         }
+
+        function closeAddTableModal() {
+            document.getElementById('addTableModal').style.display = 'none';
+            document.getElementById('newTableName').value = '';
+        }
+
+        function createTable() {
+            const nameInput = document.getElementById('newTableName');
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('Введите название столика!');
+                return;
+            }
+
+            const newTable = {
+                id: Date.now(),
+                name: name,
+                status: 'free',
+                guests: 2,
+                order: []
+            };
+
+            tables.push(newTable);
+            closeAddTableModal();
+            renderTables();
+        }
+
+        function deleteTable(id) {
+            tables = tables.filter(t => t.id !== id);
+            if (currentTableId === id) {
+                currentTableId = null;
+            }
+            renderTables();
+            renderWorkspace();
+        }
+
+        // Run app on load
+        init();
     </script>
 </body>
 </html>
