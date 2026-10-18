@@ -394,13 +394,33 @@
             margin-top: 20px;
         }
 
+        /* Тонкий кастомный скроллбар для списков управления */
         .manage-list {
-            max-height: 150px;
+            max-height: 160px;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: 8px;
             margin-bottom: 15px;
             padding: 8px;
+            background: #fafafa;
+        }
+
+        .manage-list::-webkit-scrollbar {
+            width: 5px; /* Тонкая полосочка */
+        }
+
+        .manage-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .manage-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* Цвет полоски прокрутки */
+            border-radius: 4px;
+        }
+
+        .manage-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         .manage-item-row {
@@ -547,7 +567,6 @@
     </div>
 
     <script>
-        // Загрузка данных из памяти устройства или установка начальных
         let tables = JSON.parse(localStorage.getItem('bh_tables')) || [
             { id: 1, name: 'Стол №1 (Основной зал)', status: 'free', order: [] },
             { id: 2, name: 'Стол №2 (У окна)', status: 'free', order: [] },
@@ -788,7 +807,6 @@
             renderOrderItems();
         }
 
-        // Управление модальным окном редактирования (Панель администратора)
         function openAdminModal() {
             renderManageLists();
             document.getElementById('adminModal').style.display = 'flex';
@@ -802,7 +820,6 @@
         }
 
         function renderManageLists() {
-            // Список столиков для удаления
             const tContainer = document.getElementById('manageTablesList');
             tContainer.innerHTML = '';
             if (tables.length === 0) {
@@ -819,7 +836,6 @@
                 });
             }
 
-            // Список блюд для удаления
             const dContainer = document.getElementById('manageDishesList');
             dContainer.innerHTML = '';
             if (menuItems.length === 0) {
