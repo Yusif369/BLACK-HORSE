@@ -379,7 +379,6 @@
             overflow-y: auto;
         }
 
-        /* Шапка модального окна с заголовком и кнопкой закрытия (крестиком) */
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -445,25 +444,47 @@
             background: #fafafa;
         }
 
-        /* Тонкий кастомный скроллбар */
+        /* Единый тонкий кастомный скроллбар для всех прокручиваемых элементов */
         .modal-content::-webkit-scrollbar,
         .manage-list::-webkit-scrollbar,
-        .sidebar::-webkit-scrollbar {
+        .sidebar::-webkit-scrollbar,
+        .tables-list::-webkit-scrollbar,
+        .menu-section::-webkit-scrollbar,
+        .order-items-list::-webkit-scrollbar,
+        .history-list::-webkit-scrollbar {
             width: 5px;
         }
 
         .modal-content::-webkit-scrollbar-track,
         .manage-list::-webkit-scrollbar-track,
-        .sidebar::-webkit-scrollbar-track {
+        .sidebar::-webkit-scrollbar-track,
+        .tables-list::-webkit-scrollbar-track,
+        .menu-section::-webkit-scrollbar-track,
+        .order-items-list::-webkit-scrollbar-track,
+        .history-list::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
 
         .modal-content::-webkit-scrollbar-thumb,
         .manage-list::-webkit-scrollbar-thumb,
-        .sidebar::-webkit-scrollbar-thumb {
+        .sidebar::-webkit-scrollbar-thumb,
+        .tables-list::-webkit-scrollbar-thumb,
+        .menu-section::-webkit-scrollbar-thumb,
+        .order-items-list::-webkit-scrollbar-thumb,
+        .history-list::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover,
+        .manage-list::-webkit-scrollbar-thumb:hover,
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .tables-list::-webkit-scrollbar-thumb:hover,
+        .menu-section::-webkit-scrollbar-thumb:hover,
+        .order-items-list::-webkit-scrollbar-thumb:hover,
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         .manage-item-row {
