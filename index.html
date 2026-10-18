@@ -3,754 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Управление столиками и заказами (Планшет)</title>
+    <title>Ресторан</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-        }
-
-        * {
-            box-sizing: border-box;
+        /* Стили, совместимые со старым движком WebKit (Android 4.1) */
+        body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            background-color: #f3f4f6;
+            font-family: Arial, sans-serif;
+            color: #1f2937;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
-
-        /* Sidebar / Tables panel */
-        .sidebar {
-            width: 320px;
-            background: var(--card-bg);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.03);
-            z-index: 10;
-        }
-
-        .sidebar-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sidebar-header h2 {
-            font-size: 1.2rem;
-        }
-
-        .btn {
-            background: var(--primary);
+        .header {
+            background-color: #4f46e5;
             color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: background 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .btn-secondary {
-            background: #e5e7eb;
-            color: var(--text-main);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .tables-list {
-            flex: 1;
-            overflow-y: auto;
             padding: 12px;
-        }
-
-        .table-card {
-            background: #f9fafb;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .table-card.active {
-            border-color: var(--primary);
-            background: #eef2ff;
-        }
-
-        .table-card.occupied { border-left: 6px solid var(--danger); }
-        .table-card.reserved { border-left: 6px solid var(--warning); }
-        .table-card.free { border-left: 6px solid var(--success); }
-
-        .table-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .table-name {
-            font-weight: bold;
-            font-size: 1.05rem;
-        }
-
-        .table-status {
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            border-radius: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-free { background: #d1fae5; color: #065f46; }
-        .status-occupied { background: #fee2e2; color: #991b1b; }
-        .status-reserved { background: #fef3c7; color: #92400e; }
-
-        .table-details {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Main Workspace */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: var(--bg-color);
-        }
-
-        .top-nav {
-            padding: 15px 25px;
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 65px;
-        }
-
-        .current-table-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-        }
-
-        .workspace-grid {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Menu Section */
-        .menu-section {
-            flex: 1.4;
-            padding: 20px;
-            overflow-y: auto;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .categories {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-            flex-shrink: 0;
-        }
-
-        .category-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 10px 18px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.95rem;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .category-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 14px;
-        }
-
-        .menu-item {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 90px;
-        }
-
-        .menu-item:active {
-            transform: scale(0.96);
-        }
-
-        .menu-item-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 8px;
-        }
-
-        .menu-item-price {
-            color: var(--primary);
-            font-weight: bold;
-            font-size: 1rem;
-        }
-
-        /* Order Section */
-        .order-section {
-            flex: 1;
-            background: var(--card-bg);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-width: 320px;
-        }
-
-        .order-header {
-            font-size: 1.15rem;
-            font-weight: bold;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .order-items-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        .order-item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px dashed var(--border);
-            font-size: 0.95rem;
-        }
-
-        .order-item-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .qty-btn {
-            background: #e5e7eb;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .order-summary {
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 0.95rem;
-            color: var(--text-muted);
-        }
-
-        .summary-row.total {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--text-main);
-            margin-top: 8px;
-        }
-
-        .order-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .order-actions button {
-            flex: 1;
-            padding: 14px;
-            font-size: 1rem;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal-content {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 14px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-
-        .modal-content h3 {
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 6px;
-            color: var(--text-muted);
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .empty-state {
             text-align: center;
-            color: var(--text-muted);
-            padding: 40px 0;
-            font-size: 1rem;
+            font-size: 18px;
+            font-weight: bold;
         }
 
-        /* Responsive Tablet Fixes */
-        @media (max-width: 1024px) {
-            body {
-                flex-direction: column;
-                overflow: auto;
-                height: auto;
-            }
-            .sidebar {
-                width: 100%;
-                max-height: 220px;
-            }
-            .workspace-grid {
-                flex-direction: column;
-                height: auto;
-            }
-            .main-content {
-                height: auto;
-                overflow: visible;
-            }
-            .menu-section {
-                max-height: 500px;
-            }
+        .container {
+            padding: 10px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 4px;
+        }
+
+        /* Столики */
+        .tables-grid {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .table-btn {
+            display: inline-block;
+            width: 30%;
+            margin: 1%;
+            padding: 12px 5px;
+            background-color: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .table-btn.active {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+
+        .table-btn.free { border-left: 6px solid #10b981; }
+        .table-btn.occupied { border-left: 6px solid #ef4444; }
+
+        /* Меню */
+        .menu-grid {
+            width: 100%;
+        }
+
+        .menu-btn {
+            display: inline-block;
+            width: 47%;
+            margin: 1%;
+            padding: 12px 8px;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            vertical-align: top;
+        }
+
+        .menu-btn-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .menu-btn-price {
+            color: #4f46e5;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* Заказ */
+        .order-box {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .order-row {
+            padding: 6px 0;
+            border-bottom: 1px dashed #e5e7eb;
+            font-size: 13px;
+        }
+
+        .btn-action {
+            display: block;
+            width: 100%;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .btn-clear {
+            background-color: #ef4444;
+        }
+
+        .total-text {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: right;
         }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar: Tables -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>Столики</h2>
-            <button class="btn" onclick="openAddTableModal()">+ Столик</button>
-        </div>
-        <div class="tables-list" id="tablesList"></div>
-    </div>
+    <div class="header" id="appHeader">Выберите столик</div>
 
-    <!-- Main Workspace -->
-    <div class="main-content">
-        <div class="top-nav">
-            <div class="current-table-title" id="currentTableTitle">Выберите столик</div>
-            <div id="tableStatusActions"></div>
-        </div>
+    <div class="container">
+        <!-- Список столиков -->
+        <div class="section-title">Столики</div>
+        <div class="tables-grid" id="tablesContainer"></div>
 
-        <div class="workspace-grid">
-            <!-- Menu Section -->
-            <div class="menu-section">
-                <div class="categories" id="categoriesContainer"></div>
-                <div class="menu-grid" id="menuGrid"></div>
+        <!-- Меню блюд -->
+        <div class="section-title">Меню</div>
+        <div class="menu-grid" id="menuContainer"></div>
+
+        <!-- Текущий заказ -->
+        <div class="order-box">
+            <div class="section-title" style="margin-top:0;">Текущий заказ</div>
+            <div id="orderItems">
+                <div style="color:#6b7280; font-size:13px;">Столик не выбран</div>
             </div>
-
-            <!-- Order / Bill Section -->
-            <div class="order-section">
-                <div>
-                    <div class="order-header">Текущий заказ</div>
-                    <div class="order-items-list" id="orderItemsList">
-                        <div class="empty-state">Столик не выбран или заказ пуст</div>
-                    </div>
-                </div>
-
-                <div class="order-summary" id="orderSummaryContainer" style="display: none;">
-                    <div class="summary-row">
-                        <span>Сумма:</span>
-                        <span id="subTotal">0.00 ₼</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Обслуживание (10%):</span>
-                        <span id="serviceFee">0.00 ₼</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Итого к оплате:</span>
-                        <span id="grandTotal">0.00 ₼</span>
-                    </div>
-                    <div class="order-actions">
-                        <button class="btn btn-secondary" onclick="clearOrder()">Очистить</button>
-                        <button class="btn" onclick="checkoutOrder()">Оплатить / Закрыть</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Add Table -->
-    <div class="modal" id="addTableModal">
-        <div class="modal-content">
-            <h3>Добавить новый столик</h3>
-            <div class="form-group">
-                <label>Название / Номер столика</label>
-                <input type="text" id="newTableName" placeholder="Например: Стол №5">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeAddTableModal()">Отмена</button>
-                <button class="btn" onclick="createTable()">Создать</button>
-            </div>
+            <div class="total-text" id="totalSum">Итого: 0.00 ₼</div>
+            <button class="btn-action" onclick="checkout()">Оплатить / Закрыть чек</button>
+            <button class="btn-action btn-clear" onclick="clearCurrentOrder()">Очистить заказ</button>
         </div>
     </div>
 
     <script>
-        let tables = [
-            { id: 1, name: 'Стол №1 (Основной зал)', status: 'free', order: [] },
-            { id: 2, name: 'Стол №2 (У окна)', status: 'occupied', order: [ { id: 1, name: 'Эспрессо', price: 4, qty: 2 }, { id: 5, name: 'Цезарь с курицей', price: 12, qty: 1 } ] },
-            { id: 3, name: 'Стол №3 (VIP)', status: 'reserved', order: [] },
+        // Код полностью переписан на стандарт ES5 для Android 4.1
+        var tables = [
+            { id: 1, name: 'Стол №1', status: 'free', order: [] },
+            { id: 2, name: 'Стол №2', status: 'free', order: [] },
+            { id: 3, name: 'Стол №3', status: 'free', order: [] },
+            { id: 4, name: 'Стол №4', status: 'free', order: [] },
+            { id: 5, name: 'Стол №5', status: 'free', order: [] },
+            { id: 6, name: 'VIP', status: 'free', order: [] }
         ];
 
-        const menuCategories = [
-            { id: 'all', name: 'Все' },
-            { id: 'drinks', name: 'Напитки' },
-            { id: 'hot', name: 'Горячие блюда' },
-            { id: 'salads', name: 'Салаты' },
-            { id: 'desserts', name: 'Десерты' }
+        var menuItems = [
+            { id: 1, name: 'Эспрессо', price: 4 },
+            { id: 2, name: 'Капучино', price: 6 },
+            { id: 3, name: 'Лимонад', price: 7 },
+            { id: 4, name: 'Стейк', price: 32 },
+            { id: 5, name: 'Салат Цезарь', price: 12 },
+            { id: 6, name: 'Паста', price: 14 },
+            { id: 7, name: 'Тирамису', price: 8 },
+            { id: 8, name: 'Чизкейк', price: 9 }
         ];
 
-        const menuItems = [
-            { id: 1, category: 'drinks', name: 'Эспрессо', price: 4 },
-            { id: 2, category: 'drinks', name: 'Капучино', price: 6 },
-            { id: 3, category: 'drinks', name: 'Лимонад', price: 7 },
-            { id: 4, category: 'hot', name: 'Стейк Рибай', price: 32 },
-            { id: 5, category: 'salads', name: 'Цезарь', price: 12 },
-            { id: 6, category: 'hot', name: 'Карбонара', price: 14 },
-            { id: 7, category: 'desserts', name: 'Тирамису', price: 8 },
-            { id: 8, category: 'desserts', name: 'Чизкейк', price: 9 }
-        ];
-
-        let currentTableId = null;
-        let activeCategory = 'all';
+        var currentTableId = null;
 
         function init() {
             renderTables();
-            renderCategories();
             renderMenu();
         }
 
         function renderTables() {
-            const container = document.getElementById('tablesList');
-            container.innerHTML = '';
+            var container = document.getElementById('tablesContainer');
+            var html = '';
+            for (var i = 0; i < tables.length; i++) {
+                var t = tables[i];
+                var activeClass = (t.id === currentTableId) ? ' active' : '';
+                html += '<div class="table-btn ' + t.status + activeClass + '" onclick="selectTable(' + t.id + ')">';
+                html += t.name + '<br>';
+                html += '<span style="font-size:10px; font-weight:normal;">' + (t.status === 'free' ? 'Свободен' : 'Занят') + '</span>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
 
-            tables.forEach(table => {
-                const isSelected = table.id === currentTableId;
-                const totalSum = table.order.reduce((sum, item) => sum + (item.price * item.qty), 0);
-                
-                let statusText = 'Свободен';
-                if (table.status === 'occupied') statusText = 'Занят';
-                if (table.status === 'reserved') statusText = 'Забронирован';
-
-                const card = document.createElement('div');
-                card.className = `table-card ${table.status} ${isSelected ? 'active' : ''}`;
-                card.onclick = () => selectTable(table.id);
-                card.innerHTML = `
-                    <div class="table-info">
-                        <span class="table-name">${table.name}</span>
-                        <span class="table-status status-${table.status}">${statusText}</span>
-                    </div>
-                    <div class="table-details">
-                        <span>Заказ: ${totalSum > 0 ? totalSum + ' ₼' : 'нет'}</span>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); deleteTable(${table.id})">Удалить</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+        function renderMenu() {
+            var container = document.getElementById('menuContainer');
+            var html = '';
+            for (var i = 0; i < menuItems.length; i++) {
+                var item = menuItems[i];
+                html += '<div class="menu-btn" onclick="addToOrder(' + item.id + ')">';
+                html += '<div class="menu-btn-name">' + item.name + '</div>';
+                html += '<div class="menu-btn-price">' + item.price + ' ₼</div>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
         }
 
         function selectTable(id) {
             currentTableId = id;
+            var table = getTableById(id);
+            document.getElementById('appHeader').innerText = 'Заказ: ' + table.name;
             renderTables();
-            renderWorkspace();
+            renderOrder();
         }
 
-        function renderWorkspace() {
-            const titleEl = document.getElementById('currentTableTitle');
-            const summaryContainer = document.getElementById('orderSummaryContainer');
-            const table = tables.find(t => t.id === currentTableId);
-
-            if (!table) {
-                titleEl.innerText = 'Выберите столик';
-                summaryContainer.style.display = 'none';
-                document.getElementById('orderItemsList').innerHTML = '<div class="empty-state">Столик не выбран</div>';
-                return;
-            }
-
-            titleEl.innerText = table.name;
-            summaryContainer.style.display = 'block';
-            renderOrderItems();
-        }
-
-        function renderCategories() {
-            const container = document.getElementById('categoriesContainer');
-            container.innerHTML = '';
-
-            menuCategories.forEach(cat => {
-                const btn = document.createElement('button');
-                btn.className = `category-btn ${activeCategory === cat.id ? 'active' : ''}`;
-                btn.innerText = cat.name;
-                btn.onclick = () => {
-                    activeCategory = cat.id;
-                    renderCategories();
-                    renderMenu();
-                };
-                container.appendChild(btn);
-            });
-        }
-
-        function renderMenu() {
-            const container = document.getElementById('menuGrid');
-            container.innerHTML = '';
-
-            const filtered = activeCategory === 'all' 
-                ? menuItems 
-                : menuItems.filter(i => i.category === activeCategory);
-
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'menu-item';
-                card.onclick = () => addToOrder(item);
-                card.innerHTML = `
-                    <div class="menu-item-name">${item.name}</div>
-                    <div class="menu-item-price">${item.price} ₼</div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function addToOrder(menuItem) {
+        function addToOrder(itemId) {
             if (!currentTableId) {
-                alert('Пожалуйста, выберите столик!');
+                alert('Сначала нажмите на столик сверху!');
                 return;
             }
+            var table = getTableById(currentTableId);
+            var menuItem = getMenuItemById(itemId);
 
-            const table = tables.find(t => t.id === currentTableId);
-            const existing = table.order.find(i => i.id === menuItem.id);
-
-            if (existing) {
-                existing.qty++;
-            } else {
-                table.order.push({ ...menuItem, qty: 1 });
+            var found = false;
+            for (var i = 0; i < table.order.length; i++) {
+                if (table.order[i].id === itemId) {
+                    table.order[i].qty += 1;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                table.order.push({ id: menuItem.id, name: menuItem.name, price: menuItem.price, qty: 1 });
             }
 
             table.status = 'occupied';
             renderTables();
-            renderOrderItems();
+            renderOrder();
         }
 
-        function renderOrderItems() {
-            const container = document.getElementById('orderItemsList');
-            const table = tables.find(t => t.id === currentTableId);
+        function renderOrder() {
+            var container = document.getElementById('orderItems');
+            var table = getTableById(currentTableId);
 
             if (!table || table.order.length === 0) {
-                container.innerHTML = '<div class="empty-state">Заказ пуст. Выберите блюда из меню.</div>';
-                updateSummary(0);
+                container.innerHTML = '<div style="color:#6b7280; font-size:13px;">Заказ пуст</div>';
+                document.getElementById('totalSum').innerText = 'Итого: 0.00 ₼';
                 return;
             }
 
-            container.innerHTML = '';
-            let subtotal = 0;
-
-            table.order.forEach(item => {
-                const itemTotal = item.price * item.qty;
-                subtotal += itemTotal;
-
-                const row = document.createElement('div');
-                row.className = 'order-item-row';
-                row.innerHTML = `
-                    <div>
-                        <div style="font-weight: 500;">${item.name}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${item.price} ₼ × ${item.qty} = ${itemTotal} ₼</div>
-                    </div>
-                    <div class="order-item-controls">
-                        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
-                        <span>${item.qty}</span>
-                        <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-
-            updateSummary(subtotal);
-        }
-
-        function changeQty(itemId, delta) {
-            const table = tables.find(t => t.id === currentTableId);
-            const itemIndex = table.order.findIndex(i => i.id === itemId);
-
-            if (itemIndex > -1) {
-                table.order[itemIndex].qty += delta;
-                if (table.order[itemIndex].qty <= 0) {
-                    table.order.splice(itemIndex, 1);
-                }
+            var html = '';
+            var subtotal = 0;
+            for (var i = 0; i < table.order.length; i++) {
+                var item = table.order[i];
+                var sum = item.price * item.qty;
+                subtotal += sum;
+                html += '<div class="order-row">';
+                html += '<b>' + item.name + '</b> — ' + item.qty + ' шт. × ' + item.price + ' ₼ = ' + sum + ' ₼';
+                html += '</div>';
             }
 
-            if (table.order.length === 0) {
-                table.status = 'free';
-            }
-
-            renderTables();
-            renderOrderItems();
+            var grandTotal = subtotal * 1.10; // +10% обслуживание
+            container.innerHTML = html;
+            document.getElementById('totalSum').innerText = 'Итого (+10% обсл.): ' + grandTotal.toFixed(2) + ' ₼';
         }
 
-        function updateSummary(subtotal) {
-            const serviceFee = subtotal * 0.10;
-            const grandTotal = subtotal + serviceFee;
-
-            document.getElementById('subTotal').innerText = subtotal.toFixed(2) + ' ₼';
-            document.getElementById('serviceFee').innerText = serviceFee.toFixed(2) + ' ₼';
-            document.getElementById('grandTotal').innerText = grandTotal.toFixed(2) + ' ₼';
-        }
-
-        function clearOrder() {
-            const table = tables.find(t => t.id === currentTableId);
-            if (table) {
-                table.order = [];
-                table.status = 'free';
-                renderTables();
-                renderOrderItems();
-            }
-        }
-
-        function checkoutOrder() {
-            const table = tables.find(t => t.id === currentTableId);
-            if (!table || table.order.length === 0) return;
-
-            const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const total = subtotal * 1.10;
-
-            alert(`Столик "${table.name}" закрыт!\nИтого к оплате: ${total.toFixed(2)} ₼`);
-            
+        function clearCurrentOrder() {
+            if (!currentTableId) return;
+            var table = getTableById(currentTableId);
             table.order = [];
             table.status = 'free';
             renderTables();
-            renderOrderItems();
+            renderOrder();
         }
 
-        function openAddTableModal() {
-            document.getElementById('addTableModal').style.display = 'flex';
-        }
-
-        function closeAddTableModal() {
-            document.getElementById('addTableModal').style.display = 'none';
-            document.getElementById('newTableName').value = '';
-        }
-
-        function createTable() {
-            const nameInput = document.getElementById('newTableName');
-            const name = nameInput.value.trim();
-            if (!name) {
-                alert('Введите название!');
+        function checkout() {
+            if (!currentTableId) return;
+            var table = getTableById(currentTableId);
+            if (table.order.length === 0) {
+                alert('Заказ пуст!');
                 return;
             }
-
-            tables.push({
-                id: Date.now(),
-                name: name,
-                status: 'free',
-                order: []
-            });
-
-            closeAddTableModal();
-            renderTables();
+            alert('Счет закрыт! Спасибо.');
+            clearCurrentOrder();
         }
 
-        function deleteTable(id) {
-            tables = tables.filter(t => t.id !== id);
-            if (currentTableId === id) currentTableId = null;
-            renderTables();
-            renderWorkspace();
+        function getTableById(id) {
+            for (var i = 0; i < tables.length; i++) {
+                if (tables[i].id === id) return tables[i];
+            }
+            return null;
+        }
+
+        function getMenuItemById(id) {
+            for (var i = 0; i < menuItems.length; i++) {
+                if (menuItems[i].id === id) return menuItems[i];
+            }
+            return null;
         }
 
         init();
