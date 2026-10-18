@@ -394,7 +394,6 @@
             margin-top: 20px;
         }
 
-        /* Тонкий кастомный скроллбар для списков управления */
         .manage-list {
             max-height: 160px;
             overflow-y: auto;
@@ -405,20 +404,25 @@
             background: #fafafa;
         }
 
+        /* Тонкий кастомный скроллбар для модального окна и всех списков */
+        .modal-content::-webkit-scrollbar,
         .manage-list::-webkit-scrollbar {
-            width: 5px; /* Тонкая полосочка */
+            width: 5px; /* Тонкая полоска */
         }
 
+        .modal-content::-webkit-scrollbar-track,
         .manage-list::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
 
+        .modal-content::-webkit-scrollbar-thumb,
         .manage-list::-webkit-scrollbar-thumb {
-            background: #cbd5e1; /* Цвет полоски прокрутки */
+            background: #cbd5e1;
             border-radius: 4px;
         }
 
+        .modal-content::-webkit-scrollbar-thumb:hover,
         .manage-list::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
