@@ -236,6 +236,7 @@
             flex-direction: column;
             justify-content: space-between;
             min-height: 90px;
+            position: relative;
         }
 
         .menu-item:active {
@@ -356,8 +357,10 @@
             padding: 25px;
             border-radius: 14px;
             width: 90%;
-            max-width: 400px;
+            max-width: 450px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
         .modal-content h3 {
@@ -389,6 +392,24 @@
             justify-content: flex-end;
             gap: 10px;
             margin-top: 20px;
+        }
+
+        .manage-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 8px;
+        }
+
+        .manage-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
         }
 
         .empty-state {
@@ -429,7 +450,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Black Horse</h2>
-            <button class="btn" onclick="openAddTableModal()">+ Столик</button>
+            <button class="btn btn-secondary" onclick="openAdminModal()">⚙ Редактировать</button>
         </div>
         <div class="tables-list" id="tablesList"></div>
     </div>
@@ -446,7 +467,6 @@
             <div class="menu-section">
                 <div class="menu-top-bar">
                     <div class="categories" id="categoriesContainer"></div>
-                    <button class="btn" style="white-space: nowrap;" onclick="openAddDishModal()">+ Блюдо</button>
                 </div>
                 <div class="menu-grid" id="menuGrid"></div>
             </div>
@@ -482,51 +502,52 @@
         </div>
     </div>
 
-    <!-- Modal: Add Table -->
-    <div class="modal" id="addTableModal">
+    <!-- Modal: Admin Management (Edit / Add / Remove) -->
+    <div class="modal" id="adminModal">
         <div class="modal-content">
-            <h3>Добавить новый столик</h3>
-            <div class="form-group">
-                <label>Название / Номер столика</label>
-                <input type="text" id="newTableName" placeholder="Например: Стол №5">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeAddTableModal()">Отмена</button>
-                <button class="btn" onclick="createTable()">Создать</button>
-            </div>
-        </div>
-    </div>
+            <h3>Панель управления</h3>
 
-    <!-- Modal: Add Dish -->
-    <div class="modal" id="addDishModal">
-        <div class="modal-content">
-            <h3>Добавить новое блюдо</h3>
+            <!-- Section: Tables Management -->
             <div class="form-group">
-                <label>Название блюда</label>
-                <input type="text" id="newDishName" placeholder="Например: Суп Харчо">
+                <label><b>Управление столиками</b></label>
+                <div class="manage-list" id="manageTablesList"></div>
             </div>
             <div class="form-group">
-                <label>Категория</label>
-                <select id="newDishCategory">
+                <label>Добавить новый столик</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newTableName" placeholder="Например: Стол №4">
+                    <button class="btn" onclick="createTable()">Добавить</button>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- Section: Dishes Management -->
+            <div class="form-group">
+                <label><b>Управление блюдами в меню</b></label>
+                <div class="manage-list" id="manageDishesList"></div>
+            </div>
+            <div class="form-group">
+                <label>Добавить новое блюдо</label>
+                <input type="text" id="newDishName" placeholder="Название блюда" style="margin-bottom: 8px;">
+                <select id="newDishCategory" style="margin-bottom: 8px;">
                     <option value="drinks">Напитки</option>
                     <option value="hot">Горячие блюда</option>
                     <option value="salads">Салаты</option>
                     <option value="desserts">Десерты</option>
                 </select>
+                <input type="number" id="newDishPrice" placeholder="Цена (₼)" style="margin-bottom: 8px;">
+                <button class="btn" style="width: 100%;" onclick="createDish()">Добавить блюдо</button>
             </div>
-            <div class="form-group">
-                <label>Цена (₼)</label>
-                <input type="number" id="newDishPrice" placeholder="10">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeAddDishModal()">Отмена</button>
-                <button class="btn" onclick="createDish()">Добавить</button>
+
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeAdminModal()">Закрыть</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Загрузка данных из памяти устройства (если они там есть) или установка начальных
+        // Загрузка данных из памяти устройства или установка начальных
         let tables = JSON.parse(localStorage.getItem('bh_tables')) || [
             { id: 1, name: 'Стол №1 (Основной зал)', status: 'free', order: [] },
             { id: 2, name: 'Стол №2 (У окна)', status: 'free', order: [] },
@@ -555,7 +576,6 @@
         let currentTableId = null;
         let activeCategory = 'all';
 
-        // Функция сохранения данных в память браузера/устройства
         function saveData() {
             localStorage.setItem('bh_tables', JSON.stringify(tables));
             localStorage.setItem('bh_menu', JSON.stringify(menuItems));
@@ -589,7 +609,6 @@
                     </div>
                     <div class="table-details">
                         <span>Заказ: ${totalSum > 0 ? totalSum + ' ₼' : 'нет'}</span>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); deleteTable(${table.id})">Удалить</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -672,7 +691,7 @@
             }
 
             table.status = 'occupied';
-            saveData(); // Сохраняем изменения
+            saveData();
             renderTables();
             renderOrderItems();
         }
@@ -728,7 +747,7 @@
                 table.status = 'free';
             }
 
-            saveData(); // Сохраняем изменения
+            saveData();
             renderTables();
             renderOrderItems();
         }
@@ -747,7 +766,7 @@
             if (table) {
                 table.order = [];
                 table.status = 'free';
-                saveData(); // Сохраняем изменения
+                saveData();
                 renderTables();
                 renderOrderItems();
             }
@@ -764,26 +783,65 @@
             
             table.order = [];
             table.status = 'free';
-            saveData(); // Сохраняем изменения
+            saveData();
             renderTables();
             renderOrderItems();
         }
 
-        // Управление столиками
-        function openAddTableModal() {
-            document.getElementById('addTableModal').style.display = 'flex';
+        // Управление модальным окном редактирования (Панель администратора)
+        function openAdminModal() {
+            renderManageLists();
+            document.getElementById('adminModal').style.display = 'flex';
         }
 
-        function closeAddTableModal() {
-            document.getElementById('addTableModal').style.display = 'none';
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
             document.getElementById('newTableName').value = '';
+            document.getElementById('newDishName').value = '';
+            document.getElementById('newDishPrice').value = '';
+        }
+
+        function renderManageLists() {
+            // Список столиков для удаления
+            const tContainer = document.getElementById('manageTablesList');
+            tContainer.innerHTML = '';
+            if (tables.length === 0) {
+                tContainer.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">Нет столиков</div>';
+            } else {
+                tables.forEach(t => {
+                    const row = document.createElement('div');
+                    row.className = 'manage-item-row';
+                    row.innerHTML = `
+                        <span>${t.name}</span>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteTable(${t.id})">Удалить</button>
+                    `;
+                    tContainer.appendChild(row);
+                });
+            }
+
+            // Список блюд для удаления
+            const dContainer = document.getElementById('manageDishesList');
+            dContainer.innerHTML = '';
+            if (menuItems.length === 0) {
+                dContainer.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">Меню пусто</div>';
+            } else {
+                menuItems.forEach(d => {
+                    const row = document.createElement('div');
+                    row.className = 'manage-item-row';
+                    row.innerHTML = `
+                        <span>${d.name} (${d.price} ₼)</span>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteDish(${d.id})">Удалить</button>
+                    `;
+                    dContainer.appendChild(row);
+                });
+            }
         }
 
         function createTable() {
             const nameInput = document.getElementById('newTableName');
             const name = nameInput.value.trim();
             if (!name) {
-                alert('Введите название!');
+                alert('Введите название столика!');
                 return;
             }
 
@@ -794,28 +852,21 @@
                 order: []
             });
 
-            saveData(); // Сохраняем новый столик
-            closeAddTableModal();
+            saveData();
+            nameInput.value = '';
             renderTables();
+            renderManageLists();
         }
 
         function deleteTable(id) {
             tables = tables.filter(t => t.id !== id);
-            if (currentTableId === id) currentTableId = null;
-            saveData(); // Сохраняем после удаления
+            if (currentTableId === id) {
+                currentTableId = null;
+                renderWorkspace();
+            }
+            saveData();
             renderTables();
-            renderWorkspace();
-        }
-
-        // Управление блюдами в меню
-        function openAddDishModal() {
-            document.getElementById('addDishModal').style.display = 'flex';
-        }
-
-        function closeAddDishModal() {
-            document.getElementById('addDishModal').style.display = 'none';
-            document.getElementById('newDishName').value = '';
-            document.getElementById('newDishPrice').value = '';
+            renderManageLists();
         }
 
         function createDish() {
@@ -835,9 +886,18 @@
                 price: price
             });
 
-            saveData(); // Сохраняем новое блюдо
-            closeAddDishModal();
+            saveData();
+            document.getElementById('newDishName').value = '';
+            document.getElementById('newDishPrice').value = '';
             renderMenu();
+            renderManageLists();
+        }
+
+        function deleteDish(id) {
+            menuItems = menuItems.filter(d => d.id !== id);
+            saveData();
+            renderMenu();
+            renderManageLists();
         }
 
         init();
