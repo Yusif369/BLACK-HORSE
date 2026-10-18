@@ -379,8 +379,33 @@
             overflow-y: auto;
         }
 
-        .modal-content h3 {
+        /* Шапка модального окна с заголовком и кнопкой закрытия (крестиком) */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin-bottom: 0;
+        }
+
+        .close-modal-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0 6px;
+            line-height: 1;
+            border-radius: 4px;
+        }
+
+        .close-modal-btn:hover {
+            color: var(--text-main);
+            background: #f3f4f6;
         }
 
         .form-group {
@@ -621,7 +646,10 @@
     <!-- Modal: Navigation / Settings / Daily Report / History / Calculator -->
     <div class="modal" id="navModal">
         <div class="modal-content">
-            <h3>Меню и Настройки</h3>
+            <div class="modal-header">
+                <h3>Меню и Настройки</h3>
+                <button class="close-modal-btn" onclick="closeNavModal()">×</button>
+            </div>
 
             <!-- Section: Daily Report -->
             <div class="form-group">
@@ -690,7 +718,10 @@
     <!-- Modal: Admin Management (Edit / Add / Remove) -->
     <div class="modal" id="adminModal">
         <div class="modal-content">
-            <h3>Панель управления</h3>
+            <div class="modal-header">
+                <h3>Панель управления</h3>
+                <button class="close-modal-btn" onclick="closeAdminModal()">×</button>
+            </div>
 
             <!-- Section: Tables Management -->
             <div class="form-group">
@@ -974,7 +1005,6 @@
             const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
             const total = subtotal * 1.10;
 
-            // Обновляем статистику
             stats.revenue += total;
             stats.tablesCount += 1;
 
@@ -988,7 +1018,6 @@
             renderOrderItems();
         }
 
-        // Обновление Сведений за день и Истории
         function updateStatsUI() {
             document.getElementById('dailyRevenue').innerText = stats.revenue.toFixed(2) + ' ₼';
             document.getElementById('dailyTables').innerText = stats.tablesCount;
@@ -1003,7 +1032,6 @@
                 return;
             }
 
-            // Показываем последние сохраненные дни сверху
             daysHistory.slice().reverse().forEach(entry => {
                 const item = document.createElement('div');
                 item.className = 'history-item';
@@ -1020,7 +1048,6 @@
 
         function startNewDay() {
             if (confirm('Вы уверены, что хотите начать новый день? Текущие показатели будут сохранены в историю, а текущий день обнулится.')) {
-                // Если за сегодня были продажи или столы — сохраняем в историю
                 if (stats.revenue > 0 || stats.tablesCount > 0) {
                     const now = new Date();
                     const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -1086,7 +1113,6 @@
             }
         }
 
-        // Модальное окно Меню/Настроек
         function openNavModal() {
             updateStatsUI();
             renderHistoryUI();
@@ -1097,7 +1123,6 @@
             document.getElementById('navModal').style.display = 'none';
         }
 
-        // Управление панелью редактирования
         function openAdminModal() {
             renderManageLists();
             document.getElementById('adminModal').style.display = 'flex';
