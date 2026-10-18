@@ -35,6 +35,16 @@
             touch-action: manipulation;
         }
 
+        /* Menu Drawer / Sidebar Header */
+        .hamburger-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: var(--text-main);
+        }
+
         /* Sidebar / Tables panel */
         .sidebar {
             width: 320px;
@@ -47,11 +57,17 @@
         }
 
         .sidebar-header {
-            padding: 15px 20px;
+            padding: 15px 16px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .sidebar-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .sidebar-header h2 {
@@ -404,27 +420,25 @@
             background: #fafafa;
         }
 
-        /* Тонкий кастомный скроллбар для модального окна и всех списков */
+        /* Тонкий кастомный скроллбар */
         .modal-content::-webkit-scrollbar,
-        .manage-list::-webkit-scrollbar {
-            width: 5px; /* Тонкая полоска */
+        .manage-list::-webkit-scrollbar,
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
         }
 
         .modal-content::-webkit-scrollbar-track,
-        .manage-list::-webkit-scrollbar-track {
+        .manage-list::-webkit-scrollbar-track,
+        .sidebar::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
 
         .modal-content::-webkit-scrollbar-thumb,
-        .manage-list::-webkit-scrollbar-thumb {
+        .manage-list::-webkit-scrollbar-thumb,
+        .sidebar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
-        }
-
-        .modal-content::-webkit-scrollbar-thumb:hover,
-        .manage-list::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
         }
 
         .manage-item-row {
@@ -441,6 +455,81 @@
             color: var(--text-muted);
             padding: 40px 0;
             font-size: 1rem;
+        }
+
+        /* Stats & History Styling */
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .history-list {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafafa;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.85rem;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Calculator Styling */
+        .calc-display {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.2rem;
+            text-align: right;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f9fafb;
+            font-weight: bold;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .calc-btn {
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            cursor: pointer;
+        }
+
+        .calc-btn:active {
+            background: #e2e8f0;
+        }
+
+        .calc-btn.op {
+            background: #e0e7ff;
+            color: var(--primary);
         }
 
         /* Responsive Tablet Fixes */
@@ -473,7 +562,10 @@
     <!-- Sidebar: Tables -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Black Horse</h2>
+            <div class="sidebar-header-left">
+                <button class="hamburger-btn" onclick="openNavModal()">☰</button>
+                <h2>Black Horse</h2>
+            </div>
             <button class="btn btn-secondary" onclick="openAdminModal()">⚙ Редактировать</button>
         </div>
         <div class="tables-list" id="tablesList"></div>
@@ -522,6 +614,75 @@
                         <button class="btn" onclick="checkoutOrder()">Оплатить / Закрыть</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Navigation / Settings / Daily Report / History / Calculator -->
+    <div class="modal" id="navModal">
+        <div class="modal-content">
+            <h3>Меню и Настройки</h3>
+
+            <!-- Section: Daily Report -->
+            <div class="form-group">
+                <label><b>📊 Сведения за сегодняшний день</b></label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="stat-card">
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Выручка</div>
+                        <div class="val" id="dailyRevenue">0.00 ₼</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Обслужено столов</div>
+                        <div class="val" id="dailyTables">0</div>
+                    </div>
+                </div>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 8px;" onclick="startNewDay()">🌅 Начать новый день</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- Section: Days History -->
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="margin: 0;"><b>📜 История смен (учет)</b></label>
+                    <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="clearHistory()">Очистить историю</button>
+                </div>
+                <div class="history-list" id="historyList"></div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- Section: Calculator -->
+            <div class="form-group">
+                <label><b>🧮 Быстрый калькулятор</b></label>
+                <input type="text" id="calcDisplay" class="calc-display" value="0" readonly>
+                <div class="calc-grid">
+                    <button class="calc-btn" onclick="calcClear()">C</button>
+                    <button class="calc-btn op" onclick="calcAppend('/')">/</button>
+                    <button class="calc-btn op" onclick="calcAppend('*')">*</button>
+                    <button class="calc-btn op" onclick="calcAppend('-')">-</button>
+                    
+                    <button class="calc-btn" onclick="calcAppend('7')">7</button>
+                    <button class="calc-btn" onclick="calcAppend('8')">8</button>
+                    <button class="calc-btn" onclick="calcAppend('9')">9</button>
+                    <button class="calc-btn op" onclick="calcAppend('+')">+</button>
+                    
+                    <button class="calc-btn" onclick="calcAppend('4')">4</button>
+                    <button class="calc-btn" onclick="calcAppend('5')">5</button>
+                    <button class="calc-btn" onclick="calcAppend('6')">6</button>
+                    <button class="calc-btn op" onclick="calcEval()" style="grid-row: span 2; height: 100%;">=</button>
+                    
+                    <button class="calc-btn" onclick="calcAppend('1')">1</button>
+                    <button class="calc-btn" onclick="calcAppend('2')">2</button>
+                    <button class="calc-btn" onclick="calcAppend('3')">3</button>
+                    
+                    <button class="calc-btn" onclick="calcAppend('0')" style="grid-column: span 2;">0</button>
+                    <button class="calc-btn" onclick="calcAppend('.')">.</button>
+                </div>
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeNavModal()">Закрыть</button>
             </div>
         </div>
     </div>
@@ -588,6 +749,13 @@
             { id: 8, category: 'desserts', name: 'Чизкейк', price: 9 }
         ];
 
+        let stats = JSON.parse(localStorage.getItem('bh_stats')) || {
+            revenue: 0,
+            tablesCount: 0
+        };
+
+        let daysHistory = JSON.parse(localStorage.getItem('bh_history')) || [];
+
         const menuCategories = [
             { id: 'all', name: 'Все' },
             { id: 'drinks', name: 'Напитки' },
@@ -602,12 +770,16 @@
         function saveData() {
             localStorage.setItem('bh_tables', JSON.stringify(tables));
             localStorage.setItem('bh_menu', JSON.stringify(menuItems));
+            localStorage.setItem('bh_stats', JSON.stringify(stats));
+            localStorage.setItem('bh_history', JSON.stringify(daysHistory));
         }
 
         function init() {
             renderTables();
             renderCategories();
             renderMenu();
+            updateStatsUI();
+            renderHistoryUI();
         }
 
         function renderTables() {
@@ -802,15 +974,130 @@
             const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
             const total = subtotal * 1.10;
 
+            // Обновляем статистику
+            stats.revenue += total;
+            stats.tablesCount += 1;
+
             alert(`Столик "${table.name}" закрыт!\nИтого к оплате: ${total.toFixed(2)} ₼`);
             
             table.order = [];
             table.status = 'free';
             saveData();
+            updateStatsUI();
             renderTables();
             renderOrderItems();
         }
 
+        // Обновление Сведений за день и Истории
+        function updateStatsUI() {
+            document.getElementById('dailyRevenue').innerText = stats.revenue.toFixed(2) + ' ₼';
+            document.getElementById('dailyTables').innerText = stats.tablesCount;
+        }
+
+        function renderHistoryUI() {
+            const container = document.getElementById('historyList');
+            container.innerHTML = '';
+
+            if (daysHistory.length === 0) {
+                container.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">История пуста</div>';
+                return;
+            }
+
+            // Показываем последние сохраненные дни сверху
+            daysHistory.slice().reverse().forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${entry.date}</div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">Столов: ${entry.tablesCount}</div>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary);">${entry.revenue.toFixed(2)} ₼</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function startNewDay() {
+            if (confirm('Вы уверены, что хотите начать новый день? Текущие показатели будут сохранены в историю, а текущий день обнулится.')) {
+                // Если за сегодня были продажи или столы — сохраняем в историю
+                if (stats.revenue > 0 || stats.tablesCount > 0) {
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    
+                    daysHistory.push({
+                        date: dateStr,
+                        revenue: stats.revenue,
+                        tablesCount: stats.tablesCount
+                    });
+                }
+
+                stats.revenue = 0;
+                stats.tablesCount = 0;
+                tables.forEach(t => {
+                    t.order = [];
+                    t.status = 'free';
+                });
+
+                saveData();
+                updateStatsUI();
+                renderHistoryUI();
+                renderTables();
+                renderWorkspace();
+                alert('Новый день успешно начат! Запись сохранена в историю.');
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Удалить всю сохраненную историю смен?')) {
+                daysHistory = [];
+                saveData();
+                renderHistoryUI();
+            }
+        }
+
+        // Калькулятор
+        let calcExpr = '';
+        function calcAppend(val) {
+            const disp = document.getElementById('calcDisplay');
+            if (disp.value === '0' || disp.value === 'Ошибка') {
+                calcExpr = val;
+            } else {
+                calcExpr += val;
+            }
+            disp.value = calcExpr;
+        }
+
+        function calcClear() {
+            calcExpr = '';
+            document.getElementById('calcDisplay').value = '0';
+        }
+
+        function calcEval() {
+            const disp = document.getElementById('calcDisplay');
+            try {
+                if (!calcExpr) return;
+                let res = Function('"use strict";return (' + calcExpr + ')')();
+                disp.value = res;
+                calcExpr = res.toString();
+            } catch (e) {
+                disp.value = 'Ошибка';
+                calcExpr = '';
+            }
+        }
+
+        // Модальное окно Меню/Настроек
+        function openNavModal() {
+            updateStatsUI();
+            renderHistoryUI();
+            document.getElementById('navModal').style.display = 'flex';
+        }
+
+        function closeNavModal() {
+            document.getElementById('navModal').style.display = 'none';
+        }
+
+        // Управление панелью редактирования
         function openAdminModal() {
             renderManageLists();
             document.getElementById('adminModal').style.display = 'flex';
