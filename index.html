@@ -35,7 +35,6 @@
             touch-action: manipulation;
         }
 
-        /* Menu Drawer / Sidebar Header */
         .hamburger-btn {
             background: transparent;
             border: none;
@@ -45,7 +44,6 @@
             color: var(--text-main);
         }
 
-        /* Sidebar / Tables panel */
         .sidebar {
             width: 320px;
             background: var(--card-bg);
@@ -160,7 +158,6 @@
             align-items: center;
         }
 
-        /* Main Workspace */
         .main-content {
             flex: 1;
             display: flex;
@@ -190,7 +187,6 @@
             overflow: hidden;
         }
 
-        /* Menu Section */
         .menu-section {
             flex: 1.4;
             padding: 20px;
@@ -271,7 +267,6 @@
             font-size: 1rem;
         }
 
-        /* Order Section */
         .order-section {
             flex: 1;
             background: var(--card-bg);
@@ -357,7 +352,6 @@
             font-size: 1rem;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -444,7 +438,6 @@
             background: #fafafa;
         }
 
-        /* Единый тонкий кастомный скроллбар для всех прокручиваемых элементов */
         .modal-content::-webkit-scrollbar,
         .manage-list::-webkit-scrollbar,
         .sidebar::-webkit-scrollbar,
@@ -503,7 +496,6 @@
             font-size: 1rem;
         }
 
-        /* Stats & History Styling */
         .stat-card {
             background: #f8fafc;
             border: 1px solid var(--border);
@@ -540,7 +532,6 @@
             border-bottom: none;
         }
 
-        /* Calculator Styling */
         .calc-display {
             width: 100%;
             padding: 10px;
@@ -578,7 +569,6 @@
             color: var(--primary);
         }
 
-        /* Responsive Tablet Fixes */
         @media (max-width: 1024px) {
             body {
                 flex-direction: column;
@@ -943,6 +933,27 @@
             renderOrderItems();
         }
 
+        function changeQty(itemId, delta) {
+            const table = tables.find(t => t.id === currentTableId);
+            if (!table) return;
+
+            const item = table.order.find(i => i.id === itemId);
+            if (!item) return;
+
+            item.qty += delta;
+            if (item.qty <= 0) {
+                table.order = table.order.filter(i => i.id !== itemId);
+            }
+
+            if (table.order.length === 0) {
+                table.status = 'free';
+            }
+
+            saveData();
+            renderTables();
+            renderOrderItems();
+        }
+
         function renderOrderItems() {
             const container = document.getElementById('orderItemsList');
             const table = tables.find(t => t.id === currentTableId);
@@ -969,7 +980,7 @@
                     </div>
                     <div class="order-item-controls">
                         <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
-                        <span>${item.qty}</span>
+                        <span style="font-weight: bold; min-width: 20px; text-align: center;">${item.qty}</span>
                         <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
                     </div>
                 `;
@@ -977,26 +988,6 @@
             });
 
             updateSummary(subtotal);
-        }
-
-        function changeQty(itemId, delta) {
-            const table = tables.find(t => t.id === currentTableId);
-            const itemIndex = table.order.findIndex(i => i.id === itemId);
-
-            if (itemIndex > -1) {
-                table.order[itemIndex].qty += delta;
-                if (table.order[itemIndex].qty <= 0) {
-                    table.order.splice(itemIndex, 1);
-                }
-            }
-
-            if (table.order.length === 0) {
-                table.status = 'free';
-            }
-
-            saveData();
-            renderTables();
-            renderOrderItems();
         }
 
         function updateSummary(subtotal) {
@@ -1010,12 +1001,14 @@
 
         function clearOrder() {
             const table = tables.find(t => t.id === currentTableId);
-            if (table) {
+            if (!table) return;
+
+            if (confirm('Очистить текущий заказ?')) {
                 table.order = [];
                 table.status = 'free';
                 saveData();
                 renderTables();
-                renderOrderItems();
+                renderWorkspace();
             }
         }
 
@@ -1023,20 +1016,20 @@
             const table = tables.find(t => t.id === currentTableId);
             if (!table || table.order.length === 0) return;
 
-            const subtotal = table.order.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const total = subtotal * 1.10;
+            const subtotal = table.order.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const grandTotal = subtotal + (subtotal * 0.10);
 
-            stats.revenue += total;
+            stats.revenue += grandTotal;
             stats.tablesCount += 1;
 
-            alert(`Столик "${table.name}" закрыт!\nИтого к оплате: ${total.toFixed(2)} ₼`);
-            
             table.order = [];
             table.status = 'free';
+
             saveData();
-            updateStatsUI();
             renderTables();
-            renderOrderItems();
+            renderWorkspace();
+            updateStatsUI();
+            alert(`Заказ закрыт успешно! Сумма к оплате: ${grandTotal.toFixed(2)} ₼`);
         }
 
         function updateStatsUI() {
@@ -1049,169 +1042,97 @@
             container.innerHTML = '';
 
             if (daysHistory.length === 0) {
-                container.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">История пуста</div>';
+                container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:15px;">История пуста</div>';
                 return;
             }
 
-            daysHistory.slice().reverse().forEach(entry => {
+            daysHistory.forEach(day => {
                 const item = document.createElement('div');
                 item.className = 'history-item';
                 item.innerHTML = `
-                    <div>
-                        <div style="font-weight: 600;">${entry.date}</div>
-                        <div style="color: var(--text-muted); font-size: 0.75rem;">Столов: ${entry.tablesCount}</div>
-                    </div>
-                    <div style="font-weight: bold; color: var(--primary);">${entry.revenue.toFixed(2)} ₼</div>
+                    <span>${day.date}</span>
+                    <span style="font-weight:600;">${day.revenue.toFixed(2)} ₼ (${day.tablesCount} стол.)</span>
                 `;
                 container.appendChild(item);
             });
         }
 
         function startNewDay() {
-            if (confirm('Вы уверены, что хотите начать новый день? Текущие показатели будут сохранены в историю, а текущий день обнулится.')) {
+            if (confirm('Начать новую смену? Текущие данные выручки будут сохранены в историю.')) {
                 if (stats.revenue > 0 || stats.tablesCount > 0) {
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                    
-                    daysHistory.push({
-                        date: dateStr,
-                        revenue: stats.revenue,
-                        tablesCount: stats.tablesCount
-                    });
+                    const todayDate = new Date().toLocaleDateString();
+                    daysHistory.unshift({ date: todayDate, revenue: stats.revenue, tablesCount: stats.tablesCount });
                 }
-
                 stats.revenue = 0;
                 stats.tablesCount = 0;
-                tables.forEach(t => {
-                    t.order = [];
-                    t.status = 'free';
-                });
-
                 saveData();
                 updateStatsUI();
                 renderHistoryUI();
-                renderTables();
-                renderWorkspace();
-                alert('Новый день успешно начат! Запись сохранена в историю.');
+                alert('Новая смена начата!');
             }
         }
 
         function clearHistory() {
-            if (confirm('Удалить всю сохраненную историю смен?')) {
+            if (confirm('Очистить всю историю смен?')) {
                 daysHistory = [];
                 saveData();
                 renderHistoryUI();
             }
         }
 
-        // Калькулятор
-        let calcExpr = '';
-        function calcAppend(val) {
-            const disp = document.getElementById('calcDisplay');
-            if (disp.value === '0' || disp.value === 'Ошибка') {
-                calcExpr = val;
-            } else {
-                calcExpr += val;
-            }
-            disp.value = calcExpr;
+        // Modal management
+        function openNavModal() { document.getElementById('navModal').style.display = 'flex'; }
+        function closeNavModal() { document.getElementById('navModal').style.display = 'none'; }
+        function openAdminModal() { 
+            renderAdminLists();
+            document.getElementById('adminModal').style.display = 'flex'; 
         }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
-        function calcClear() {
-            calcExpr = '';
-            document.getElementById('calcDisplay').value = '0';
-        }
+        function renderAdminLists() {
+            const tList = document.getElementById('manageTablesList');
+            tList.innerHTML = '';
+            tables.forEach(t => {
+                const row = document.createElement('div');
+                row.className = 'manage-item-row';
+                row.innerHTML = `
+                    <span>${t.name}</span>
+                    <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" onclick="deleteTable(${t.id})">Удалить</button>
+                `;
+                tList.appendChild(row);
+            });
 
-        function calcEval() {
-            const disp = document.getElementById('calcDisplay');
-            try {
-                if (!calcExpr) return;
-                let res = Function('"use strict";return (' + calcExpr + ')')();
-                disp.value = res;
-                calcExpr = res.toString();
-            } catch (e) {
-                disp.value = 'Ошибка';
-                calcExpr = '';
-            }
-        }
-
-        function openNavModal() {
-            updateStatsUI();
-            renderHistoryUI();
-            document.getElementById('navModal').style.display = 'flex';
-        }
-
-        function closeNavModal() {
-            document.getElementById('navModal').style.display = 'none';
-        }
-
-        function openAdminModal() {
-            renderManageLists();
-            document.getElementById('adminModal').style.display = 'flex';
-        }
-
-        function closeAdminModal() {
-            document.getElementById('adminModal').style.display = 'none';
-            document.getElementById('newTableName').value = '';
-            document.getElementById('newDishName').value = '';
-            document.getElementById('newDishPrice').value = '';
-        }
-
-        function renderManageLists() {
-            const tContainer = document.getElementById('manageTablesList');
-            tContainer.innerHTML = '';
-            if (tables.length === 0) {
-                tContainer.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">Нет столиков</div>';
-            } else {
-                tables.forEach(t => {
-                    const row = document.createElement('div');
-                    row.className = 'manage-item-row';
-                    row.innerHTML = `
-                        <span>${t.name}</span>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteTable(${t.id})">Удалить</button>
-                    `;
-                    tContainer.appendChild(row);
-                });
-            }
-
-            const dContainer = document.getElementById('manageDishesList');
-            dContainer.innerHTML = '';
-            if (menuItems.length === 0) {
-                dContainer.innerHTML = '<div style="font-size:0.85rem; color:#6b7280; text-align:center; padding:10px;">Меню пусто</div>';
-            } else {
-                menuItems.forEach(d => {
-                    const row = document.createElement('div');
-                    row.className = 'manage-item-row';
-                    row.innerHTML = `
-                        <span>${d.name} (${d.price} ₼)</span>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteDish(${d.id})">Удалить</button>
-                    `;
-                    dContainer.appendChild(row);
-                });
-            }
+            const dList = document.getElementById('manageDishesList');
+            dList.innerHTML = '';
+            menuItems.forEach(d => {
+                const row = document.createElement('div');
+                row.className = 'manage-item-row';
+                row.innerHTML = `
+                    <span>${d.name} (${d.price} ₼)</span>
+                    <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" onclick="deleteDish(${d.id})">Удалить</button>
+                `;
+                dList.appendChild(row);
+            });
         }
 
         function createTable() {
             const nameInput = document.getElementById('newTableName');
             const name = nameInput.value.trim();
-            if (!name) {
-                alert('Введите название столика!');
-                return;
-            }
+            if (!name) return;
 
-            tables.push({
-                id: Date.now(),
-                name: name,
-                status: 'free',
-                order: []
-            });
-
-            saveData();
+            const newId = tables.length > 0 ? Math.max(...tables.map(t => t.id)) + 1 : 1;
+            tables.push({ id: newId, name: name, status: 'free', order: [] });
             nameInput.value = '';
+            saveData();
             renderTables();
-            renderManageLists();
+            renderAdminLists();
         }
 
         function deleteTable(id) {
+            if (tables.length <= 1) {
+                alert('Нельзя удалить последний столик!');
+                return;
+            }
             tables = tables.filter(t => t.id !== id);
             if (currentTableId === id) {
                 currentTableId = null;
@@ -1219,7 +1140,7 @@
             }
             saveData();
             renderTables();
-            renderManageLists();
+            renderAdminLists();
         }
 
         function createDish() {
@@ -1227,33 +1148,53 @@
             const category = document.getElementById('newDishCategory').value;
             const price = parseFloat(document.getElementById('newDishPrice').value);
 
-            if (!name || isNaN(price) || price <= 0) {
-                alert('Пожалуйста, введите корректное название и цену блюда!');
+            if (!name || isNaN(price)) {
+                alert('Заполните корректно название и цену блюда!');
                 return;
             }
 
-            menuItems.push({
-                id: Date.now(),
-                category: category,
-                name: name,
-                price: price
-            });
+            const newId = menuItems.length > 0 ? Math.max(...menuItems.map(d => d.id)) + 1 : 1;
+            menuItems.push({ id: newId, category, name, price });
 
-            saveData();
             document.getElementById('newDishName').value = '';
             document.getElementById('newDishPrice').value = '';
+            saveData();
             renderMenu();
-            renderManageLists();
+            renderAdminLists();
         }
 
         function deleteDish(id) {
             menuItems = menuItems.filter(d => d.id !== id);
             saveData();
             renderMenu();
-            renderManageLists();
+            renderAdminLists();
         }
 
-        init();
+        // Calculator logic
+        let calcVal = '0';
+        function calcClear() {
+            calcVal = '0';
+            document.getElementById('calcDisplay').value = calcVal;
+        }
+        function calcAppend(char) {
+            if (calcVal === '0' && char !== '.') {
+                calcVal = char;
+            } else {
+                calcVal += char;
+            }
+            document.getElementById('calcDisplay').value = calcVal;
+        }
+        function calcEval() {
+            try {
+                calcVal = eval(calcVal).toString();
+                document.getElementById('calcDisplay').value = calcVal;
+            } catch (e) {
+                document.getElementById('calcDisplay').value = 'Ошибка';
+                calcVal = '0';
+            }
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
